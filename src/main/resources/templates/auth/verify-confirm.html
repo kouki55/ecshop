@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>登録の完了 - ecshop</title>
+</head>
+<body>
+<h1>会員登録を完了します</h1>
+<p>下のボタンを押すと、会員登録が完了します。</p>
+<form th:action="@{/register/verify}" th:object="${form}" method="post">
+    <input type="hidden" th:field="*{token}">
+    <button type="submit">登録を完了する</button>
+</form>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${addressId == null} ? '住所の追加 - ecshop' : '住所の変更 - ecshop'">住所 - ecshop</title>
+</head>
+<body>
+<h1 th:text="${addressId == null} ? '住所の追加' : '住所の変更'">住所</h1>
+
+<!-- 追加と変更で送信先だけが違う。変更のときは URL に住所の ID が入るが、サーバー側で持ち主を確かめる -->
+<form th:action="${addressId == null} ? @{/account/addresses} : @{/account/addresses/{id}(id=${addressId})}"
+      th:object="${form}" method="post">
+    <p th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}" th:text="${error}">エラー</p>
+    <div>
+        <label for="recipientName">宛名</label>
+        <input type="text" id="recipientName" th:field="*{recipientName}" maxlength="100" autocomplete="name" required>
+        <p th:if="${#fields.hasErrors('recipientName')}" th:errors="*{recipientName}">エラー</p>
+    </div>
+    <div>
+        <label for="postalCode">郵便番号</label>
+        <input type="text" id="postalCode" th:field="*{postalCode}" maxlength="8" autocomplete="postal-code"
+               inputmode="numeric" placeholder="1234567" required>
+        <p th:if="${#fields.hasErrors('postalCode')}" th:errors="*{postalCode}">エラー</p>
+    </div>
+    <div>
+        <label for="prefecture">都道府県</label>
+        <select id="prefecture" th:field="*{prefecture}" autocomplete="address-level1" required>
+            <option value="">選択してください</option>
+            <option th:each="p : ${prefectures}" th:value="${p}" th:text="${p}">東京都</option>
+        </select>
+        <p th:if="${#fields.hasErrors('prefecture')}" th:errors="*{prefecture}">エラー</p>
+    </div>
+    <div>
+        <label for="city">市区町村</label>
+        <input type="text" id="city" th:field="*{city}" maxlength="100" autocomplete="address-level2" required>
+        <p th:if="${#fields.hasErrors('city')}" th:errors="*{city}">エラー</p>
+    </div>
+    <div>
+        <label for="addressLine1">番地</label>
+        <input type="text" id="addressLine1" th:field="*{addressLine1}" maxlength="200" autocomplete="address-line1"
+               required>
+        <p th:if="${#fields.hasErrors('addressLine1')}" th:errors="*{addressLine1}">エラー</p>
+    </div>
+    <div>
+        <label for="addressLine2">建物名・部屋番号（任意）</label>
+        <input type="text" id="addressLine2" th:field="*{addressLine2}" maxlength="200" autocomplete="address-line2">
+        <p th:if="${#fields.hasErrors('addressLine2')}" th:errors="*{addressLine2}">エラー</p>
+    </div>
+    <div>
+        <label for="phone">電話番号</label>
+        <input type="tel" id="phone" th:field="*{phone}" maxlength="13" autocomplete="tel" required>
+        <p th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}">エラー</p>
+    </div>
+    <button type="submit">保存する</button>
+</form>
+
+<p><a th:href="@{/account}">登録情報へ戻る</a></p>
+</body>
+</html>

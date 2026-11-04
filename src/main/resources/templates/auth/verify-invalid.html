@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>リンクが無効です - ecshop</title>
+</head>
+<body>
+<h1>このリンクは使えません</h1>
+<!-- 期限切れ・使用済み・存在しないの区別は表示しない -->
+<p>リンクの有効期限が切れているか、すでに使われています。</p>
+<p>お手数ですが、もう一度会員登録をお申し込みください。新しいリンクをお送りします。</p>
+<p><a th:href="@{/register}">会員登録へ</a></p>
+</body>
+</html>

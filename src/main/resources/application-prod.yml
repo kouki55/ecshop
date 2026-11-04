@@ -1,0 +1,7 @@
+# 本番用プロファイル（--spring.profiles.active=prod で有効）
+server:
+  servlet:
+    session:
+      cookie:
+        # HTTPS でだけ Cookie を送る
+        secure: true

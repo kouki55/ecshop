@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: ecshop
+  config:
+    # docker compose と同じ .env を読み込む（無ければ OS の環境変数だけを使う）
+    import: optional:file:.env[.properties]
+  autoconfigure:
+    # 開発用ユーザーを自動で作り、そのパスワードをログに出す機能を止める（認証は自前の会員テーブルで行う）
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5433/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      # テーブルは Flyway だけで作る。Hibernate には「定義と一致しているか」の確認だけさせる
+      ddl-auto: validate
+    # 画面描画中に DB へ遅延アクセスさせない
+    open-in-view: false
+  mail:
+    host: 127.0.0.1
+    port: 1025
+
+server:
+  address: 127.0.0.1
+  port: 8080
+  error:
+    # 利用者向けエラー画面に内部情報を出さない
+    include-stacktrace: never
+    include-message: never
+    include-binding-errors: never
+    include-exception: false
+  servlet:
+    session:
+      # 30 分操作がなければセッションを失効させる（NIST SP 800-63B-4 の AAL2 の上限 1 時間より短くする）
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+
+app:
+  auth:
+    # メール内のリンクの先頭部分
+    base-url: http://localhost:8080
+    mail-from: no-reply@ecshop.local
+    # メール確認リンクの有効期限
+    verification-token-ttl: 24h
+    # パスワード再設定リンクの有効期限（パスワードを変えられる強い権限なので短くする）
+    password-reset-token-ttl: 30m
+    # 漏えい済みパスワードのリスト（出典は同じフォルダの compromised-passwords-NOTICE.txt）
+    compromised-password-list: classpath:security/compromised-passwords.txt.gz
+  # IP アドレス単位の回数制限（アプリのメモリ上で数える。本番ではリバースプロキシで行う）
+  rate-limit:
+    login:
+      max-requests: 20
+      window: 5m
+    register:
+      max-requests: 5
+      window: 1h
+    password-reset:
+      max-requests: 5
+      window: 1h

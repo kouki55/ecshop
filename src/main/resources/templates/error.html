@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>エラー</title>
+</head>
+<body>
+<h1>エラーが発生しました</h1>
+<!-- ステータスコードだけを表示する。例外の内容やメッセージは出さない -->
+<p th:text="${status}">500</p>
+<p>お手数ですが、時間をおいて再度お試しください。</p>
+<p><a th:href="@{/}">トップページへ戻る</a></p>
+</body>
+</html>

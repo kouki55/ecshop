@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>会員登録 - ecshop</title>
+</head>
+<body>
+<h1>会員登録</h1>
+
+<!-- th:action を使うと CSRF トークンの hidden 項目が自動で追加される -->
+<form th:action="@{/register}" th:object="${form}" method="post">
+    <div>
+        <label for="name">お名前</label>
+        <input type="text" id="name" th:field="*{name}" maxlength="100" autocomplete="name" required>
+        <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}">エラー</p>
+    </div>
+    <div>
+        <label for="email">メールアドレス</label>
+        <input type="email" id="email" th:field="*{email}" maxlength="254" autocomplete="username" required>
+        <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}">エラー</p>
+    </div>
+    <div>
+        <label for="password">パスワード（15〜64文字）</label>
+        <!-- 入力エラーで画面を再表示しても、パスワードは書き戻さない（th:field を使わない） -->
+        <input type="password" id="password" name="password" minlength="15" maxlength="64"
+               autocomplete="new-password" required>
+        <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}">エラー</p>
+        <p>文字の種類の組み合わせは問いません。長めの文やフレーズがおすすめです。</p>
+    </div>
+    <button type="submit">登録する</button>
+</form>
+
+<p><a th:href="@{/login}">ログインはこちら</a></p>
+</body>
+</html>

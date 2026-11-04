@@ -1,0 +1,15 @@
+# 秘密情報
+.env
+
+# ビルド成果物
+target/
+
+# Claude Code の個人設定
+.claude/settings.local.json
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# OS
+.DS_Store

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>登録情報 - ecshop</title>
+</head>
+<body>
+<h1>登録情報</h1>
+
+<h2>会員情報</h2>
+<dl>
+    <dt>お名前</dt>
+    <dd th:text="${user.name}">山田太郎</dd>
+    <dt>メールアドレス</dt>
+    <dd th:text="${user.email}">member@example.com</dd>
+</dl>
+<p><a th:href="@{/account/profile/edit}">お名前を変更する</a></p>
+
+<h2>住所</h2>
+<p th:if="${addresses.isEmpty()}">登録されている住所はありません。</p>
+<ul>
+    <li th:each="address : ${addresses}">
+        <p th:text="${address.recipientName} + ' 様'">山田太郎 様</p>
+        <p>
+            〒<span th:text="${address.postalCode}">1000001</span>
+            <span th:text="${address.prefecture}">東京都</span><span th:text="${address.city}">千代田区</span><span
+                th:text="${address.addressLine1}">千代田1-1</span>
+            <span th:text="${address.addressLine2}">○○ビル</span>
+        </p>
+        <p>電話番号：<span th:text="${address.phone}">0312345678</span></p>
+        <a th:href="@{/account/addresses/{id}/edit(id=${address.id})}">変更</a>
+        <!-- 削除は CSRF トークン付きの POST で行う -->
+        <form th:action="@{/account/addresses/{id}/delete(id=${address.id})}" method="post">
+            <button type="submit">削除</button>
+        </form>
+    </li>
+</ul>
+<p th:if="${addresses.size() < maxAddresses}"><a th:href="@{/account/addresses/new}">住所を追加する</a></p>
+<p th:unless="${addresses.size() < maxAddresses}">住所は<span th:text="${maxAddresses}">10</span>件まで登録できます。</p>
+
+<h2>その他</h2>
+<p><a th:href="@{/account/withdraw}">退会する</a></p>
+<p><a th:href="@{/}">トップページへ戻る</a></p>
+</body>
+</html>

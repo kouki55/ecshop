@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs の除外設定。
+  除外を追加するときは、なぜ問題ないと判断したかをコメントで書き、開発者の確認を取ること。
+-->
+<FindBugsFilter
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+    <!--
+      SPRING_ENDPOINT：Find Security Bugs が全ての @Controller に付ける「外部から呼べる入口」という目印で、欠陥の指摘ではない。
+      入口の安全性は SecurityFilterChain のデフォルト拒否と、機能ごとのアクセス制御テストで確認する。（2026-10-17 開発者確認済み）
+    -->
+    <Match>
+        <Bug pattern="SPRING_ENDPOINT"/>
+    </Match>
+    <!--
+      EI_EXPOSE_REP2（コンストラクタだけ）：Spring がコンストラクタに注入する Bean（Service・Repository・SessionRegistry など）を
+      フィールドに保存すると、「外部の可変オブジェクトを保存している」と指摘される。SpotBugs は add / update / delete などの
+      名前のメソッドを持つ型を可変とみなすためで、Bean の参照を持つのは DI の通常の設計なので欠陥ではない。
+      範囲はコンストラクタに限り、setter など他のメソッドでの同じ問題は引き続き検出する。（2026-11-03 開発者確認済み）
+    -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Package name="~com\.example\.ecshop(\..*)?"/>
+        <Method name="&lt;init&gt;"/>
+    </Match>
+</FindBugsFilter>
