@@ -16,6 +16,7 @@ import com.example.ecshop.IntegrationTest;
 import com.example.ecshop.MutableClock;
 import com.example.ecshop.TestProducts;
 import com.example.ecshop.TestUsers;
+import com.example.ecshop.pricing.TaxRate;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;

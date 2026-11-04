@@ -1,4 +1,4 @@
-package com.example.ecshop.product;
+package com.example.ecshop.pricing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -1,5 +1,6 @@
 package com.example.ecshop.product;
 
+import com.example.ecshop.pricing.TaxRate;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;

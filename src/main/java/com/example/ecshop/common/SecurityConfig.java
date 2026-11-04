@@ -40,6 +40,8 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         // 登録情報・住所・退会は会員だけ。管理者アカウントは管理画面専用なので含めない
                         .requestMatchers("/account", "/account/**").hasRole("MEMBER")
+                        // カートも会員だけ。どのカートかは常にログイン中の会員から決める
+                        .requestMatchers("/cart", "/cart/**").hasRole("MEMBER")
                         .anyRequest().denyAll())
                 // ログイン中のセッションを SessionRegistry に記録する（上限なし）。
                 // パスワード変更・退会で失効させたセッションで操作すると、ログイン画面に送られる

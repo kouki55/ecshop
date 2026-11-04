@@ -1,10 +1,10 @@
 package com.example.ecshop;
 
+import com.example.ecshop.pricing.TaxRate;
 import com.example.ecshop.product.Category;
 import com.example.ecshop.product.CategoryRepository;
 import com.example.ecshop.product.Product;
 import com.example.ecshop.product.ProductRepository;
-import com.example.ecshop.product.TaxRate;
 import java.util.UUID;
 
 /**

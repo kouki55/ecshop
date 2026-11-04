@@ -47,6 +47,7 @@ com/example/ecshop/
   auth/       会員登録・ログイン・パスワード再設定
   product/    商品・カテゴリ
   cart/       カート
+  pricing/    金額計算（税率・消費税・送料。カートと注文の両方から使う）
   order/      注文・注文履歴
   payment/    決済（PaymentGateway インターフェース + 疑似実装）
   admin/      管理画面

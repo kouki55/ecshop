@@ -1,10 +1,10 @@
-package com.example.ecshop.product;
+package com.example.ecshop.pricing;
 
 /**
  * 消費税率。DB の products.tax_rate（CHECK で 8 か 10 だけ）と対応する。
  *
- * <p>ここで求めるのは画面に表示する「税込単価」だけ。注文の消費税は、税率ごとの合計に対して
- * 1 回だけ端数を切り捨てる（注文の回で作る計算クラスが担当する）ため、税込単価を足した額とは
+ * <p>ここで求めるのは画面に表示する「税込単価」だけ。カートや注文の消費税は、税率ごとの合計に対して
+ * 1 回だけ端数を切り捨てる（{@link PriceCalculator} が担当する）ため、税込単価を足した額とは
  * 数円ずれることがある。
  */
 public enum TaxRate {

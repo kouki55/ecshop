@@ -1,5 +1,7 @@
 package com.example.ecshop.product;
 
+import com.example.ecshop.pricing.TaxRate;
+
 /**
  * 画面に渡す商品の情報。エンティティを画面に直接渡さず、表示に必要な値だけをここに詰める
  * （在庫数そのものや公開フラグは含めない）。

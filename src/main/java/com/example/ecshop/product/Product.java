@@ -1,5 +1,6 @@
 package com.example.ecshop.product;
 
+import com.example.ecshop.pricing.TaxRate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>カート - ecshop</title>
+</head>
+<body>
+<h1>カート</h1>
+
+<p th:if="${cartMessage}" th:text="${cartMessage}">カートに追加しました。</p>
+<p th:if="${cartError}" th:text="${cartError}" style="color: #b00020">在庫が足りません。</p>
+
+<p th:if="${cart.isEmpty()}">カートに商品はありません。</p>
+
+<th:block th:unless="${cart.isEmpty()}">
+    <table>
+        <thead>
+        <tr>
+            <th>商品</th>
+            <th>単価（税込）</th>
+            <th>数量</th>
+            <th>小計（税抜）</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="line : ${cart.lines}">
+            <td>
+                <a th:href="@{/products/{id}(id=${line.productId})}" th:text="${line.productName}">エンジンオイル</a>
+                <!-- 販売終了・在庫切れなどの警告。この行は合計に含めない -->
+                <strong th:unless="${line.status.purchasable()}" th:text="${line.status.label()}"
+                        style="color: #b00020">販売終了</strong>
+            </td>
+            <td>
+                <span th:text="${#numbers.formatInteger(line.unitPriceIncludingTax, 1, 'COMMA')}">1,098</span>円
+                （税率 <span th:text="${line.taxRatePercent}">10</span>%）
+            </td>
+            <td>
+                <!-- 数量の変更。CSRF トークンは th:action が自動で埋め込む -->
+                <form th:action="@{/cart/items/{id}(id=${line.itemId})}" method="post">
+                    <input type="number" name="quantity" min="1" th:max="${T(com.example.ecshop.cart.CartItem).MAX_QUANTITY}"
+                           th:value="${line.quantity}" required>
+                    <button type="submit">変更</button>
+                </form>
+            </td>
+            <td><span th:text="${#numbers.formatInteger(line.subtotal, 1, 'COMMA')}">1,998</span>円</td>
+            <td>
+                <form th:action="@{/cart/items/{id}/delete(id=${line.itemId})}" method="post">
+                    <button type="submit">削除</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2>金額</h2>
+    <p th:if="${cart.hasUnavailableLines()}">販売終了・在庫切れなどの商品は、合計に含めていません。</p>
+    <dl>
+        <dt>商品小計（税抜）</dt>
+        <dd><span th:text="${#numbers.formatInteger(cart.price.subtotal, 1, 'COMMA')}">1,998</span>円</dd>
+        <th:block th:each="breakdown : ${cart.price.breakdowns}">
+            <dt>消費税（<span th:text="${breakdown.taxRate.percent()}">10</span>%対象
+                <span th:text="${#numbers.formatInteger(breakdown.subtotal, 1, 'COMMA')}">1,998</span>円）</dt>
+            <dd><span th:text="${#numbers.formatInteger(breakdown.tax, 1, 'COMMA')}">199</span>円</dd>
+        </th:block>
+        <dt>送料</dt>
+        <dd><span th:text="${#numbers.formatInteger(cart.price.shippingFee, 1, 'COMMA')}">500</span>円</dd>
+        <dt>合計（税込）</dt>
+        <dd><strong><span th:text="${#numbers.formatInteger(cart.price.total, 1, 'COMMA')}">2,697</span>円</strong></dd>
+    </dl>
+    <p>
+        商品の税込合計が<span th:text="${#numbers.formatInteger(freeShippingThreshold, 1, 'COMMA')}">5,000</span>円以上で送料無料です。
+        消費税は税率ごとの合計に対して計算するため、税込単価の合計と数円異なることがあります。
+    </p>
+</th:block>
+
+<p><a th:href="@{/products}">買い物を続ける</a></p>
+<p><a th:href="@{/}">トップページへ戻る</a></p>
+</body>
+</html>
