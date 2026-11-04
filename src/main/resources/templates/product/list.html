@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>商品一覧 - ecshop</title>
+</head>
+<body>
+<h1>商品一覧</h1>
+
+<!-- カテゴリの絞り込み。選んでいるカテゴリはリンクにせず太字にする -->
+<nav>
+    <a th:if="${categoryId != null}" th:href="@{/products}">すべて</a>
+    <strong th:if="${categoryId == null}">すべて</strong>
+    <th:block th:each="category : ${categories}">
+        |
+        <strong th:if="${category.id == categoryId}" th:text="${category.name}">エンジンオイル</strong>
+        <a th:unless="${category.id == categoryId}"
+           th:href="@{/products(category=${category.id})}" th:text="${category.name}">エンジンオイル</a>
+    </th:block>
+</nav>
+
+<p th:if="${products.isEmpty()}">商品がありません。</p>
+<ul>
+    <li th:each="product : ${products.content}">
+        <a th:href="@{/products/{id}(id=${product.id})}" th:text="${product.name}">エンジンオイル 5W-30 4L</a>
+        <span th:text="${product.categoryName}">エンジンオイル</span>
+        税込 <span th:text="${#numbers.formatInteger(product.priceIncludingTax, 1, 'COMMA')}">3,850</span>円
+        （税抜 <span th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')}">3,500</span>円）
+        <span th:text="${product.stockStatus.label()}">在庫あり</span>
+    </li>
+</ul>
+
+<!-- ページ移動。カテゴリで絞り込んでいるときは、その条件を付けたまま移動する -->
+<nav th:if="${products.totalPages > 1}">
+    <a th:if="${products.hasPrevious()}"
+       th:href="${categoryId == null} ? @{/products(page=${products.number - 1})}
+                                      : @{/products(category=${categoryId},page=${products.number - 1})}">前へ</a>
+    <span th:text="${products.number + 1} + ' / ' + ${products.totalPages} + ' ページ'">1 / 2 ページ</span>
+    <a th:if="${products.hasNext()}"
+       th:href="${categoryId == null} ? @{/products(page=${products.number + 1})}
+                                      : @{/products(category=${categoryId},page=${products.number + 1})}">次へ</a>
+</nav>
+
+<p><a th:href="@{/}">トップページへ戻る</a></p>
+</body>
+</html>

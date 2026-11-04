@@ -30,7 +30,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/", "/login", "/register", "/register/sent", "/register/verify",
                                 "/password/forgot", "/password/forgot/sent", "/password/reset",
-                                "/withdrawn").permitAll()
+                                "/withdrawn",
+                                // 商品の一覧と詳細は未ログインでも見られる。/products/* は 1 階層だけなので、
+                                // /products/1/edit のような URL は下の denyAll で拒否される
+                                "/products", "/products/*").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/register", "/register/verify", "/password/forgot", "/password/reset").permitAll()
                         // POST /login と POST /logout は、ここに来る前に Spring Security のフィルタが処理するので列挙不要

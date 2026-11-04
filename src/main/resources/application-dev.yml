@@ -1,0 +1,6 @@
+# 開発用プロファイル（./mvnw spring-boot:run -Dspring-boot.run.profiles=dev で有効）
+# このプロファイルのときだけ、DevDataLoader が練習用のカテゴリと商品を DB に入れる
+spring:
+  thymeleaf:
+    # テンプレートを編集したら、再起動せずに画面へ反映する
+    cache: false

@@ -2,6 +2,8 @@ package com.example.ecshop;
 
 import com.example.ecshop.auth.AddressRepository;
 import com.example.ecshop.auth.UserRepository;
+import com.example.ecshop.product.CategoryRepository;
+import com.example.ecshop.product.ProductRepository;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -42,5 +44,11 @@ public class TestBeansConfiguration {
     TestUsers testUsers(UserRepository userRepository, AddressRepository addressRepository,
                         PasswordEncoder passwordEncoder, JdbcTemplate jdbc, MutableClock clock) {
         return new TestUsers(userRepository, addressRepository, passwordEncoder, jdbc, clock);
+    }
+
+    @Bean
+    TestProducts testProducts(CategoryRepository categoryRepository, ProductRepository productRepository,
+                              MutableClock clock) {
+        return new TestProducts(categoryRepository, productRepository, clock);
     }
 }

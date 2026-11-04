@@ -7,6 +7,7 @@
 <body>
 <h1>ecshop</h1>
 <p>カー用品の学習用 EC サイトです。</p>
+<p><a th:href="@{/products}">商品一覧</a></p>
 
 <div th:if="${loginEmail != null}">
     <p>ログイン中：<span th:text="${loginEmail}">member@example.com</span></p>
