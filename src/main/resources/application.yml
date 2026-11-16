@@ -49,6 +49,11 @@ app:
     password-reset-token-ttl: 30m
     # 漏えい済みパスワードのリスト（出典は同じフォルダの compromised-passwords-NOTICE.txt）
     compromised-password-list: classpath:security/compromised-passwords.txt.gz
+  order:
+    # 注文を受け付けてから支払いを待つ時間。過ぎたら自動でキャンセルし、在庫を戻す
+    payment-timeout: 30m
+    # 自動キャンセルを動かす間隔（5 分ごと。秒 分 時 日 月 曜日 の cron 式）
+    auto-cancel-cron: "0 */5 * * * *"
   # IP アドレス単位の回数制限（アプリのメモリ上で数える。本番ではリバースプロキシで行う）
   rate-limit:
     login:

@@ -13,13 +13,15 @@ import org.springframework.context.annotation.Import;
  * （と PostgreSQL のコンテナ）を使い回すので、テストが速くなる。
  * IP 単位の回数制限は、多数のリクエストを送るテストで引っかからないよう上限を大きくしている
  * （回数制限そのものは IpRateLimitFilterTest などで確認する）。
+ * 未払い注文の自動キャンセルは、テストの途中で勝手に動かないよう止めている（OrderTest で直接呼んで確認する）。
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @SpringBootTest(properties = {
         "app.rate-limit.login.max-requests=100000",
         "app.rate-limit.register.max-requests=100000",
-        "app.rate-limit.password-reset.max-requests=100000"
+        "app.rate-limit.password-reset.max-requests=100000",
+        "app.order.auto-cancel-cron=-"
 })
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, TestBeansConfiguration.class})

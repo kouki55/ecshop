@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>お支払い - ecshop</title>
+</head>
+<body>
+<h1>お支払い</h1>
+<p>ご注文の手続き：1. 配送先 → 2. 確認 → <strong>3. お支払い</strong> → 4. 完了</p>
+
+<p>注文番号：<span th:text="${order.id}">1</span></p>
+
+<th:block th:if="${order.status.name() == 'CANCELLED'}">
+    <p>このご注文はキャンセルされました（お支払いの期限を過ぎた場合も、自動でキャンセルされます）。</p>
+    <p>お手数ですが、もう一度カートから商品を選んでご注文ください。</p>
+</th:block>
+
+<th:block th:if="${order.status.name() == 'RECEIVED'}">
+    <p th:if="${orderError}" th:text="${orderError}" style="color: #b00020">お支払いができませんでした。</p>
+    <p>
+        ご注文は受け付けましたが、お支払いがまだ完了していません。
+        <strong th:text="${order.paymentDeadline}">2026年11月16日(月) 10:30</strong>までにお支払いがない場合、
+        ご注文は自動でキャンセルされます。
+    </p>
+    <p>お支払い合計（税込）：<strong><span th:text="${#numbers.formatInteger(order.totalAmount, 1, 'COMMA')}">2,700</span>円</strong></p>
+
+    <form th:action="@{/orders/{id}/payment(id=${order.id})}" method="post">
+        <ul>
+            <li th:each="method, stat : ${paymentMethods}">
+                <label>
+                    <input type="radio" name="paymentToken" th:value="${method.token}" th:checked="${stat.first}" required>
+                    <span th:text="${method.label}">テスト用カード</span>
+                </label>
+            </li>
+        </ul>
+        <button type="submit">支払う</button>
+    </form>
+</th:block>
+
+<p><a th:href="@{/}">トップページへ戻る</a></p>
+</body>
+</html>

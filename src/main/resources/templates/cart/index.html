@@ -72,6 +72,9 @@
         商品の税込合計が<span th:text="${#numbers.formatInteger(freeShippingThreshold, 1, 'COMMA')}">5,000</span>円以上で送料無料です。
         消費税は税率ごとの合計に対して計算するため、税込単価の合計と数円異なることがあります。
     </p>
+    <!-- 購入できない明細があるときは、先にカートを直してもらう -->
+    <p th:unless="${cart.hasUnavailableLines()}"><a th:href="@{/orders/new}">レジに進む</a></p>
+    <p th:if="${cart.hasUnavailableLines()}">購入できない商品を削除するか数量を減らすと、レジに進めます。</p>
 </th:block>
 
 <p><a th:href="@{/products}">買い物を続ける</a></p>

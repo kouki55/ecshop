@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>配送先の選択 - ecshop</title>
+</head>
+<body>
+<h1>配送先の選択</h1>
+<p>ご注文の手続き：<strong>1. 配送先</strong> → 2. 確認 → 3. お支払い → 4. 完了</p>
+
+<p th:if="${orderError}" th:text="${orderError}" style="color: #b00020">配送先を選んでください。</p>
+
+<th:block th:if="${addresses.isEmpty()}">
+    <p>住所が登録されていません。住所を登録してから、もう一度お手続きください。</p>
+    <p><a th:href="@{/account/addresses/new}">住所を登録する</a></p>
+</th:block>
+
+<!-- 表示するだけで何も変えないので GET で送る（CSRF トークンは不要） -->
+<form th:unless="${addresses.isEmpty()}" th:action="@{/orders/confirm}" method="get">
+    <ul>
+        <li th:each="address, stat : ${addresses}">
+            <label>
+                <input type="radio" name="addressId" th:value="${address.id}" th:checked="${stat.first}" required>
+                <span th:text="${address.recipientName} + ' 様'">山田太郎 様</span>
+                〒<span th:text="${address.postalCode}">1000001</span>
+                <span th:text="${address.prefecture}">東京都</span><span th:text="${address.city}">千代田区</span><span
+                    th:text="${address.addressLine1}">千代田1-1</span>
+                <span th:text="${address.addressLine2}">○○ビル</span>
+            </label>
+        </li>
+    </ul>
+    <button type="submit">確認画面へ進む</button>
+</form>
+
+<p><a th:href="@{/account}">住所を追加・変更する</a></p>
+<p><a th:href="@{/cart}">カートに戻る</a></p>
+</body>
+</html>

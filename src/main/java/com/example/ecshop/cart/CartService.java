@@ -139,6 +139,22 @@ public class CartService {
         findOwned(userId, itemId);
     }
 
+    /** 注文に使うカートの 1 行（商品 ID と数量だけ）。 */
+    public record OrderLine(long productId, int quantity) {
+    }
+
+    /** 注文用に、カートの中身を商品 ID の小さい順に返す。 */
+    @Transactional(readOnly = true)
+    public List<OrderLine> orderLines(long userId) {
+        return cartItemRepository.findOrderLines(userId);
+    }
+
+    /** 注文を確定したあとに、カートを空にする（カート自体は残す）。 */
+    @Transactional
+    public void clear(long userId) {
+        cartItemRepository.deleteByUserId(userId);
+    }
+
     /** 退会などで、その会員のカートを中身ごと削除する。 */
     @Transactional
     public void deleteCart(long userId) {

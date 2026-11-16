@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ご注文内容の確認 - ecshop</title>
+</head>
+<body>
+<h1>ご注文内容の確認</h1>
+<p>ご注文の手続き：1. 配送先 → <strong>2. 確認</strong> → 3. お支払い → 4. 完了</p>
+
+<p th:if="${orderError}" th:text="${orderError}" style="color: #b00020">支払い方法を選んでください。</p>
+
+<h2>商品</h2>
+<table>
+    <thead>
+    <tr>
+        <th>商品</th>
+        <th>単価（税抜）</th>
+        <th>税率</th>
+        <th>数量</th>
+        <th>小計（税抜）</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="line : ${confirm.cart.lines}">
+        <td th:text="${line.productName}">エンジンオイル</td>
+        <td><span th:text="${#numbers.formatInteger(line.unitPrice, 1, 'COMMA')}">1,000</span>円</td>
+        <td><span th:text="${line.taxRatePercent}">10</span>%</td>
+        <td th:text="${line.quantity}">2</td>
+        <td><span th:text="${#numbers.formatInteger(line.subtotal, 1, 'COMMA')}">2,000</span>円</td>
+    </tr>
+    </tbody>
+</table>
+
+<h2>金額</h2>
+<dl>
+    <dt>商品小計（税抜）</dt>
+    <dd><span th:text="${#numbers.formatInteger(confirm.cart.price.subtotal, 1, 'COMMA')}">2,000</span>円</dd>
+    <th:block th:each="breakdown : ${confirm.cart.price.breakdowns}">
+        <dt>消費税（<span th:text="${breakdown.taxRate.percent()}">10</span>%対象
+            <span th:text="${#numbers.formatInteger(breakdown.subtotal, 1, 'COMMA')}">2,000</span>円）</dt>
+        <dd><span th:text="${#numbers.formatInteger(breakdown.tax, 1, 'COMMA')}">200</span>円</dd>
+    </th:block>
+    <dt>送料</dt>
+    <dd><span th:text="${#numbers.formatInteger(confirm.cart.price.shippingFee, 1, 'COMMA')}">500</span>円</dd>
+    <dt>お支払い合計（税込）</dt>
+    <dd><strong><span th:text="${#numbers.formatInteger(confirm.cart.price.total, 1, 'COMMA')}">2,700</span>円</strong></dd>
+</dl>
+
+<h2>お届け先</h2>
+<p th:text="${confirm.address.recipientName} + ' 様'">山田太郎 様</p>
+<p>
+    〒<span th:text="${confirm.address.postalCode}">1000001</span>
+    <span th:text="${confirm.address.prefecture}">東京都</span><span th:text="${confirm.address.city}">千代田区</span><span
+        th:text="${confirm.address.addressLine1}">千代田1-1</span>
+    <span th:text="${confirm.address.addressLine2}">○○ビル</span>
+</p>
+<p><a th:href="@{/orders/new}">お届け先を変更する</a></p>
+
+<h2>お支払い・お届け・キャンセルについて</h2>
+<dl>
+    <dt>お支払いの時期</dt>
+    <dd>注文確定時にお支払いいただきます（テスト用カード）。</dd>
+    <dt>お届け予定</dt>
+    <dd th:text="${confirm.deliveryLabel}">2026年11月19日(木)〜2026年11月21日(土)</dd>
+    <dt>キャンセルの条件</dt>
+    <dd>
+        発送前であればキャンセルできます。
+        お支払いが<span th:text="${paymentTimeoutMinutes}">30</span>分以内に完了しない場合、ご注文は自動でキャンセルされます。
+    </dd>
+</dl>
+
+<!-- CSRF トークンは th:action が自動で埋め込む -->
+<form th:action="@{/orders}" method="post">
+    <!-- 二重送信の判定に使うキーと、この画面に表示した合計。確定の時点で合計が変わっていたら注文しない -->
+    <input type="hidden" name="idempotencyKey" th:value="${confirm.idempotencyKey}">
+    <input type="hidden" name="addressId" th:value="${confirm.address.id}">
+    <input type="hidden" name="expectedTotal" th:value="${confirm.cart.price.total}">
+
+    <h2>お支払い方法</h2>
+    <ul>
+        <li th:each="method, stat : ${confirm.paymentMethods}">
+            <label>
+                <input type="radio" name="paymentToken" th:value="${method.token}" th:checked="${stat.first}" required>
+                <span th:text="${method.label}">テスト用カード</span>
+            </label>
+        </li>
+    </ul>
+    <button type="submit">注文を確定して支払う</button>
+</form>
+
+<p><a th:href="@{/cart}">カートに戻る</a></p>
+</body>
+</html>

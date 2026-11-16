@@ -77,6 +77,27 @@ public class Product {
         return product;
     }
 
+    /**
+     * 注文の確定で在庫を減らす。呼び出す前に、この商品の行を悲観ロックで取得しておくこと
+     * （ProductRepository.findAllByIdForUpdate）。ロックなしで減らすと、同時の注文で在庫を売り越すおそれがある。
+     */
+    public void decreaseStock(int quantity, Instant now) {
+        if (quantity <= 0 || quantity > stock) {
+            throw new IllegalStateException("在庫が足りません");
+        }
+        this.stock -= quantity;
+        this.updatedAt = now;
+    }
+
+    /** 注文のキャンセルで在庫を戻す。 */
+    public void increaseStock(int quantity, Instant now) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("数量は 1 以上にしてください");
+        }
+        this.stock = Math.addExact(stock, quantity);
+        this.updatedAt = now;
+    }
+
     public Long getId() {
         return id;
     }

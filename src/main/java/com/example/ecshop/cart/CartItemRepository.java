@@ -20,6 +20,14 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     @EntityGraph(attributePaths = "product")
     List<CartItem> findByCartUserIdOrderByIdAsc(Long userId);
 
+    /**
+     * 注文用に、商品 ID と数量だけを読む（商品のエンティティは読み込まない）。
+     * 商品は注文の処理で悲観ロックをかけて読み直すので、ここで先に古い値を読んでおかないようにする。
+     */
+    @Query("select new com.example.ecshop.cart.CartService$OrderLine(i.product.id, i.quantity) "
+            + "from CartItem i where i.cart.userId = :userId order by i.product.id")
+    List<CartService.OrderLine> findOrderLines(@Param("userId") Long userId);
+
     Optional<CartItem> findByCartIdAndProductId(Long cartId, Long productId);
 
     long countByCartId(Long cartId);
