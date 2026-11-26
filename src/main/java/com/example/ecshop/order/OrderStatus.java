@@ -23,6 +23,11 @@ public enum OrderStatus {
         return label;
     }
 
+    /** キャンセルできるか（発送前の受付・支払済だけ）。画面でボタンを出すかどうかにも使う。 */
+    public boolean isCancellable() {
+        return canChangeTo(CANCELLED);
+    }
+
     /** この状態から next に変えてよいか。 */
     public boolean canChangeTo(OrderStatus next) {
         return nextStatuses().contains(next);

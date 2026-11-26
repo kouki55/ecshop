@@ -3,6 +3,8 @@ package com.example.ecshop.order;
 import com.example.ecshop.auth.AddressService;
 import com.example.ecshop.auth.AppUserDetails;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -12,11 +14,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * 注文の画面（配送先の選択 → 確認 → 確定・支払い → 完了）。
+ * 注文の画面（配送先の選択 → 確認 → 確定・支払い → 完了）と、注文履歴・キャンセルの画面。
  * 会員 ID は URL やフォームから受け取らず、常にログイン中の会員から取る。
  * 確定・支払いのあとはリダイレクトする（再読み込みで同じ操作がくり返されないように）。
  */
@@ -24,7 +27,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class OrderController {
 
     private static final String PAYMENT_FAILED = "お支払いができませんでした。別の支払い方法をお試しください。";
-    private static final String CART_NOT_READY = "カートの内容を確認してください。購入できない商品が含まれているか、カートが空です。";
+    private static final String NOT_CANCELLABLE = "このご注文はキャンセルできません（発送後、またはキャンセル済みです）。";
+    private static final String CART_NOT_READY ="カートの内容を確認してください。購入できない商品が含まれているか、カートが空です。";
 
     private final OrderService orderService;
     private final AddressService addressService;
@@ -145,6 +149,55 @@ public class OrderController {
         return "order/complete";
     }
 
+    // ---------------------------------------------------------------- 注文履歴
+
+    // URL の size や sort は引数にないので、付けられても無視される。範囲外のページ番号は 400
+    @GetMapping("/orders")
+    public String history(@AuthenticationPrincipal AppUserDetails user,
+                          @RequestParam(name = "page", defaultValue = "0")
+                          @Min(0) @Max(OrderService.HISTORY_MAX_PAGE) int page,
+                          Model model) {
+        model.addAttribute("orders", orderService.list(user.getUserId(), page));
+        return "order/history";
+    }
+
+    @GetMapping("/orders/{id}")
+    public String detail(@AuthenticationPrincipal AppUserDetails user, @PathVariable long id, Model model) {
+        // 他人の注文と存在しない注文は、どちらも 404（OrderService.get が会員 ID を条件に取得する）
+        model.addAttribute("order", orderService.get(user.getUserId(), id));
+        return "order/detail";
+    }
+
+    // ---------------------------------------------------------------- 会員によるキャンセル
+
+    /** キャンセルの確認画面。取り消せない操作なので、ボタン 1 回で実行されないよう 1 画面はさむ。 */
+    @GetMapping("/orders/{id}/cancel")
+    public String cancelConfirm(@AuthenticationPrincipal AppUserDetails user, @PathVariable long id, Model model,
+                                RedirectAttributes redirect) {
+        OrderView order = orderService.get(user.getUserId(), id);
+        if (!order.status().isCancellable()) {
+            redirect.addFlashAttribute("orderError", NOT_CANCELLABLE);
+            return toDetail(id, redirect);
+        }
+        model.addAttribute("order", order);
+        return "order/cancel";
+    }
+
+    @PostMapping("/orders/{id}/cancel")
+    public String cancel(@AuthenticationPrincipal AppUserDetails user, @PathVariable long id,
+                         RedirectAttributes redirect) {
+        switch (orderService.cancel(user.getUserId(), id)) {
+            case OrderService.CancelResult.Cancelled cancelled -> redirect.addFlashAttribute("orderMessage",
+                    cancelled.refunded() ? "ご注文をキャンセルし、お支払いいただいた金額を返金しました。"
+                            : "ご注文をキャンセルしました。");
+            case OrderService.CancelResult.RefundFailed failed -> redirect.addFlashAttribute("orderError",
+                    "返金の手続きができなかったため、キャンセルできませんでした。時間をおいてもう一度お試しください。");
+            case OrderService.CancelResult.NotCancellable notCancellable ->
+                    redirect.addFlashAttribute("orderError", NOT_CANCELLABLE);
+        }
+        return toDetail(id, redirect);
+    }
+
     // ---------------------------------------------------------------- リダイレクト先
 
     /** 受付・キャンセルなら支払い画面、それ以外（支払済など）なら完了画面。 */
@@ -162,6 +215,11 @@ public class OrderController {
     private static String toComplete(long orderId, RedirectAttributes redirect) {
         redirect.addAttribute("id", orderId);
         return "redirect:/orders/{id}/complete";
+    }
+
+    private static String toDetail(long orderId, RedirectAttributes redirect) {
+        redirect.addAttribute("id", orderId);
+        return "redirect:/orders/{id}";
     }
 
     private static String backToConfirm(Long addressId, String error, RedirectAttributes redirect) {

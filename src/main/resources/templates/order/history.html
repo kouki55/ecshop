@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>注文履歴 - ecshop</title>
+</head>
+<body>
+<h1>注文履歴</h1>
+
+<p th:if="${orders.totalElements == 0}">まだご注文はありません。</p>
+
+<table th:if="${orders.hasContent()}">
+    <thead>
+    <tr>
+        <th>注文番号</th>
+        <th>注文日時</th>
+        <th>商品</th>
+        <th>お支払い合計（税込）</th>
+        <th>状態</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="order : ${orders}">
+        <td th:text="${order.id}">1</td>
+        <td th:text="${order.orderedAt}">2026年11月16日(月) 10:00</td>
+        <td>
+            <span th:text="${order.firstProductName}">エンジンオイル</span>
+            <span th:if="${order.itemCount > 1}" th:text="'ほか ' + ${order.itemCount - 1} + ' 点'">ほか 1 点</span>
+        </td>
+        <td><span th:text="${#numbers.formatInteger(order.totalAmount, 1, 'COMMA')}">2,700</span>円</td>
+        <td th:text="${order.status.label()}">支払済</td>
+        <td><a th:href="@{/orders/{id}(id=${order.id})}">詳細</a></td>
+    </tr>
+    </tbody>
+</table>
+
+<p th:if="${orders.totalPages > 1}">
+    <a th:if="${orders.hasPrevious()}" th:href="@{/orders(page=${orders.number - 1})}">前へ</a>
+    <span th:text="${orders.number + 1} + ' / ' + ${orders.totalPages} + ' ページ'">1 / 2 ページ</span>
+    <a th:if="${orders.hasNext()}" th:href="@{/orders(page=${orders.number + 1})}">次へ</a>
+</p>
+
+<p><a th:href="@{/products}">商品一覧へ</a></p>
+<p><a th:href="@{/}">トップページへ戻る</a></p>
+</body>
+</html>

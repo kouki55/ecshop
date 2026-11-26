@@ -18,6 +18,12 @@ class OrderStatusTest {
         assertNext(OrderStatus.CANCELLED, EnumSet.noneOf(OrderStatus.class));
     }
 
+    @Test
+    void キャンセルできるのは受付と支払済だけ() {
+        assertThat(EnumSet.allOf(OrderStatus.class)).filteredOn(OrderStatus::isCancellable)
+                .containsExactlyInAnyOrder(OrderStatus.RECEIVED, OrderStatus.PAID);
+    }
+
     private static void assertNext(OrderStatus from, Set<OrderStatus> allowed) {
         for (OrderStatus to : OrderStatus.values()) {
             assertThat(from.canChangeTo(to)).as(from + " → " + to).isEqualTo(allowed.contains(to));

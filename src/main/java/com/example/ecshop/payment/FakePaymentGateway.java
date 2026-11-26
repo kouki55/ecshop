@@ -34,6 +34,15 @@ public class FakePaymentGateway implements PaymentGateway {
         return new ChargeResult(SUCCESS_TOKEN.equals(request.paymentToken()), newTransactionId());
     }
 
+    /** 疑似の返金。いつも成功する（返金の失敗は、テストでは差し替えた実装で再現する）。 */
+    @Override
+    public RefundResult refund(RefundRequest request) {
+        if (request.amount() <= 0) {
+            throw new IllegalArgumentException("返金額が正しくありません");
+        }
+        return new RefundResult(true, newTransactionId());
+    }
+
     /** 取引 ID。推測されないよう SecureRandom で作る（payments.transaction_id は 64 文字まで）。 */
     private String newTransactionId() {
         byte[] bytes = new byte[16];

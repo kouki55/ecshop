@@ -12,6 +12,7 @@
 <div th:if="${loginEmail != null}">
     <p>ログイン中：<span th:text="${loginEmail}">member@example.com</span></p>
     <p><a th:href="@{/cart}">カート</a></p>
+    <p><a th:href="@{/orders}">注文履歴</a></p>
     <p><a th:href="@{/account}">登録情報</a></p>
     <!-- ログアウトは CSRF トークン付きの POST で行う（th:action がトークンを自動で埋め込む） -->
     <form th:action="@{/logout}" method="post">

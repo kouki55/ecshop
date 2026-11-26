@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ご注文の詳細 - ecshop</title>
+</head>
+<body>
+<h1>ご注文の詳細</h1>
+
+<p th:if="${orderMessage}" th:text="${orderMessage}">ご注文をキャンセルしました。</p>
+<p th:if="${orderError}" th:text="${orderError}">エラー</p>
+
+<dl>
+    <dt>注文番号</dt>
+    <dd th:text="${order.id}">1</dd>
+    <dt>注文日時</dt>
+    <dd th:text="${order.orderedAt}">2026年11月16日(月) 10:00</dd>
+    <dt>状態</dt>
+    <dd th:text="${order.status.label()}">支払済</dd>
+</dl>
+
+<th:block th:if="${order.status.name() == 'RECEIVED'}">
+    <p>
+        まだお支払いが済んでいません。<span th:text="${order.paymentDeadline}">2026年11月16日(月) 10:30</span>
+        までにお支払いがない場合、ご注文は自動でキャンセルされます。
+    </p>
+    <p><a th:href="@{/orders/{id}/payment(id=${order.id})}">お支払いへ進む</a></p>
+</th:block>
+
+<h2>ご注文の商品</h2>
+<!-- 商品名・単価・税率は注文した時点の値（あとで商品が変わってもここは変わらない） -->
+<table>
+    <thead>
+    <tr>
+        <th>商品</th>
+        <th>単価（税抜）</th>
+        <th>税率</th>
+        <th>数量</th>
+        <th>小計（税抜）</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="line : ${order.lines}">
+        <td th:text="${line.productName}">エンジンオイル</td>
+        <td><span th:text="${#numbers.formatInteger(line.unitPrice, 1, 'COMMA')}">1,000</span>円</td>
+        <td><span th:text="${line.taxRatePercent}">10</span>%</td>
+        <td th:text="${line.quantity}">2</td>
+        <td><span th:text="${#numbers.formatInteger(line.subtotal, 1, 'COMMA')}">2,000</span>円</td>
+    </tr>
+    </tbody>
+</table>
+
+<dl>
+    <dt>商品の合計（税抜）</dt>
+    <dd><span th:text="${#numbers.formatInteger(order.subtotal, 1, 'COMMA')}">2,000</span>円</dd>
+    <dt>消費税</dt>
+    <dd><span th:text="${#numbers.formatInteger(order.taxAmount, 1, 'COMMA')}">200</span>円</dd>
+    <dt>送料</dt>
+    <dd><span th:text="${#numbers.formatInteger(order.shippingFee, 1, 'COMMA')}">500</span>円</dd>
+    <dt>お支払い合計（税込）</dt>
+    <dd><strong><span th:text="${#numbers.formatInteger(order.totalAmount, 1, 'COMMA')}">2,700</span>円</strong></dd>
+</dl>
+
+<h2>お届け先</h2>
+<p th:text="${order.recipientName} + ' 様'">山田太郎 様</p>
+<p>〒<span th:text="${order.postalCode}">1000001</span> <span th:text="${order.address}">東京都千代田区千代田1-1</span></p>
+<p>電話番号：<span th:text="${order.phone}">0312345678</span></p>
+
+<th:block th:if="${order.status.isCancellable()}">
+    <h2>キャンセル</h2>
+    <p>発送前のため、このご注文はキャンセルできます。</p>
+    <p><a th:href="@{/orders/{id}/cancel(id=${order.id})}">この注文をキャンセルする</a></p>
+</th:block>
+
+<p><a th:href="@{/orders}">注文履歴へ戻る</a></p>
+<p><a th:href="@{/}">トップページへ戻る</a></p>
+</body>
+</html>

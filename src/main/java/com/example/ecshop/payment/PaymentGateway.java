@@ -22,6 +22,9 @@ public interface PaymentGateway {
     /** 支払いを行う。カードが使えないなどの「失敗」は例外ではなく、結果（succeeded = false）で返す。 */
     ChargeResult charge(ChargeRequest request);
 
+    /** 支払い済みの取引を全額返金する。失敗は例外ではなく、結果（succeeded = false）で返す。 */
+    RefundResult refund(RefundRequest request);
+
     /** 支払い方法の選択肢。token を送ってもらい、label を画面に出す。 */
     record PaymentMethod(String token, String label) {
     }
@@ -41,5 +44,18 @@ public interface PaymentGateway {
 
     /** 支払いの結果。transactionId は決済サービスが発行する取引 ID（失敗したときも発行される）。 */
     record ChargeResult(boolean succeeded, String transactionId) {
+    }
+
+    /**
+     * 返金の依頼。
+     *
+     * @param transactionId  返金する支払いの取引 ID（charge の結果で受け取ったもの）
+     * @param idempotencyKey 同じ返金をくり返し送っても 1 回しか返金しないための値
+     */
+    record RefundRequest(long orderId, String transactionId, String idempotencyKey, long amount) {
+    }
+
+    /** 返金の結果。transactionId は返金の取引 ID（失敗したときは null）。 */
+    record RefundResult(boolean succeeded, String transactionId) {
     }
 }

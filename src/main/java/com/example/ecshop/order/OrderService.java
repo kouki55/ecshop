@@ -9,6 +9,7 @@ import com.example.ecshop.cart.CartView;
 import com.example.ecshop.payment.Payment;
 import com.example.ecshop.payment.PaymentGateway;
 import com.example.ecshop.payment.PaymentRepository;
+import com.example.ecshop.payment.PaymentStatus;
 import com.example.ecshop.pricing.PriceCalculator;
 import com.example.ecshop.product.Product;
 import com.example.ecshop.product.ProductRepository;
@@ -24,6 +25,9 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -32,7 +36,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * 注文の確認・確定・支払い・自動キャンセル。会員が操作するメソッドは、ログイン中の会員 ID（userId）を必ず受け取り、
+ * 注文の確認・確定・支払い・履歴・キャンセル（会員による・自動）。会員が操作するメソッドは、ログイン中の会員 ID（userId）を必ず受け取り、
  * その会員の注文・住所・カートだけを扱う。
  *
  * <p>注文の確定は 2 つのトランザクションに分ける。
@@ -99,6 +103,30 @@ public class OrderService {
         record NotPayable(OrderStatus status) implements PayResult {
         }
     }
+
+    /** 会員によるキャンセルの結果。 */
+    public sealed interface CancelResult {
+        /** キャンセルした。refunded は、支払い済みだったので返金したかどうか。 */
+        record Cancelled(boolean refunded) implements CancelResult {
+        }
+
+        /** 返金に失敗したので、キャンセルしていない（注文は支払済のまま）。 */
+        record RefundFailed() implements CancelResult {
+        }
+
+        /** キャンセルできない状態（発送済・完了・キャンセル済）。status は今の状態。 */
+        record NotCancellable(OrderStatus status) implements CancelResult {
+        }
+    }
+
+    /** 注文履歴の 1 ページに出す件数。 */
+    public static final int HISTORY_PAGE_SIZE = 20;
+
+    /** 注文履歴のページ番号の上限（極端に大きい値で DB に無駄な検索をさせないため）。 */
+    public static final int HISTORY_MAX_PAGE = 10_000;
+
+    // 新しい注文が上。注文日時が同じときも並びが毎回変わらないよう、ID でも並べる
+    private static final Sort NEWEST_FIRST = Sort.by(Sort.Order.desc("orderedAt"), Sort.Order.desc("id"));
 
     /** 注文を作る処理の結果（このクラスの中だけで使う）。 */
     private sealed interface Creation {
@@ -246,7 +274,7 @@ public class OrderService {
         Instant now = clock.instant();
         if (isExpired(order, now)) {
             // 支払い期限を過ぎていれば、自動キャンセルを待たずにここでキャンセルする
-            cancel(order, now);
+            cancelAndRestock(order, now);
             return new PayResult.NotPayable(OrderStatus.CANCELLED);
         }
 
@@ -288,6 +316,56 @@ public class OrderService {
         return OrderView.of(order, properties.paymentTimeout());
     }
 
+    /** 自分の注文を新しい順に 1 ページ分返す（page は 0 から）。他人の注文は含まない。 */
+    @Transactional(readOnly = true)
+    public Page<OrderSummary> list(long userId, int page) {
+        Page<Order> orders = orderRepository.findByUserId(userId, PageRequest.of(page, HISTORY_PAGE_SIZE, NEWEST_FIRST));
+        List<Long> orderIds = orders.map(Order::getId).getContent();
+        // 注文 ID ごとに商品名をまとめる（明細の ID 順に並んでいる）
+        Map<Long, List<String>> namesByOrder = orderIds.isEmpty() ? Map.of()
+                : orderRepository.findItemNamesByOrderIds(orderIds).stream()
+                .collect(Collectors.groupingBy(OrderItemName::orderId,
+                        Collectors.mapping(OrderItemName::productName, Collectors.toList())));
+        return orders.map(order -> OrderSummary.of(order, namesByOrder.getOrDefault(order.getId(), List.of())));
+    }
+
+    // ---------------------------------------------------------------- 会員によるキャンセル
+
+    /**
+     * 発送前（受付・支払済）の自分の注文をキャンセルし、在庫を戻す。支払済なら先に返金する。
+     * 返金に失敗したときは何も変えない（お金を返さずにキャンセル済みにしてしまわないため）。
+     */
+    public CancelResult cancel(long userId, long orderId) {
+        return Objects.requireNonNull(tx.execute(status -> cancelInTransaction(userId, orderId)));
+    }
+
+    private CancelResult cancelInTransaction(long userId, long orderId) {
+        // 注文の行をロックする。支払い・自動キャンセル・キャンセルの連打と同時に動かないようにするため。
+        // 他人の注文 ID なら、存在しない ID と同じ 404
+        Order order = orderRepository.findByIdAndUserIdForUpdate(orderId, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!order.getStatus().isCancellable()) {
+            return new CancelResult.NotCancellable(order.getStatus());
+        }
+        Instant now = clock.instant();
+        boolean refunded = false;
+        if (order.getStatus() == OrderStatus.PAID) {
+            Payment payment = paymentRepository.findByOrderIdAndStatus(orderId, PaymentStatus.SUCCEEDED)
+                    // 支払済なら成功した支払いが必ずある（支払いの記録と状態の変更は同じトランザクション）
+                    .orElseThrow(() -> new IllegalStateException("成功した支払いが見つかりません"));
+            PaymentGateway.RefundResult result = paymentGateway.refund(new PaymentGateway.RefundRequest(
+                    orderId, payment.getTransactionId(), order.getIdempotencyKey() + "-refund",
+                    payment.getAmount()));
+            if (!result.succeeded()) {
+                return new CancelResult.RefundFailed();
+            }
+            payment.markRefunded(result.transactionId(), now);
+            refunded = true;
+        }
+        cancelAndRestock(order, now);
+        return new CancelResult.Cancelled(refunded);
+    }
+
     // ---------------------------------------------------------------- 自動キャンセル
 
     /**
@@ -313,7 +391,7 @@ public class OrderService {
         if (order.getStatus() != OrderStatus.RECEIVED || !isExpired(order, now)) {
             return false;
         }
-        cancel(order, now);
+        cancelAndRestock(order, now);
         return true;
     }
 
@@ -326,7 +404,7 @@ public class OrderService {
     }
 
     /** キャンセルして在庫を戻す。呼び出す前に注文の行をロックしておくこと。 */
-    private void cancel(Order order, Instant now) {
+    private void cancelAndRestock(Order order, Instant now) {
         List<OrderItem> items = order.getItems();
         Map<Long, Product> products = lockProducts(items.stream().map(OrderItem::getProductId).toList());
         for (OrderItem item : items) {

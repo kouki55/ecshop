@@ -30,6 +30,13 @@ public class TestBeansConfiguration {
         return new CapturingMailSender();
     }
 
+    /** 返金の失敗を再現できる決済。疑似決済の代わりに注入される。 */
+    @Bean
+    @Primary
+    ControllablePaymentGateway controllablePaymentGateway() {
+        return new ControllablePaymentGateway();
+    }
+
     /**
      * @Async の処理（メール送信）を、テストでは呼び出したスレッドでそのまま実行する。
      * こうするとリクエストが終わった時点でメールが記録済みになり、待ち合わせ無しで確認できる。

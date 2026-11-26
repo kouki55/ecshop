@@ -14,7 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * V1 マイグレーションが PostgreSQL に適用でき、データ設計ルールが DB の制約として効いていることを確認する。
+ * マイグレーションが PostgreSQL に適用でき、データ設計ルールが DB の制約として効いていることを確認する。
  * 各テストは終了時にロールバックされるので、テスト同士でデータは干渉しない。
  */
 @IntegrationTest
@@ -104,6 +104,36 @@ class FlywayMigrationTest {
         insertPayment(orderId, "tx-2", "SUCCEEDED");
 
         assertThatThrownBy(() -> insertPayment(orderId, "tx-3", "SUCCEEDED"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void 返金済みの支払いがあればもう一度成功した支払いは作れない() {
+        long orderId = insertOrder(userId, UUID.randomUUID(), 3000, 300, 500, 3800);
+        jdbc.update("""
+                INSERT INTO payments (order_id, transaction_id, status, amount, refund_transaction_id, refunded_at)
+                VALUES (?, 'tx-1', 'REFUNDED', 3800, 'rf-1', now())
+                """, orderId);
+
+        assertThatThrownBy(() -> insertPayment(orderId, "tx-2", "SUCCEEDED"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    // 制約違反が起きるとそのトランザクションでは以降の SQL が実行できないので、1 テストに 1 つの違反だけを試す
+    @Test
+    void 返金済みの支払いには返金の取引IDが必要() {
+        long orderId = insertOrder(userId, UUID.randomUUID(), 3000, 300, 500, 3800);
+        assertThatThrownBy(() -> insertPayment(orderId, "tx-1", "REFUNDED"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void 返金していない支払いには返金の記録を入れられない() {
+        long orderId = insertOrder(userId, UUID.randomUUID(), 3000, 300, 500, 3800);
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO payments (order_id, transaction_id, status, amount, refund_transaction_id, refunded_at)
+                VALUES (?, 'tx-2', 'SUCCEEDED', 3800, 'rf-2', now())
+                """, orderId))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 

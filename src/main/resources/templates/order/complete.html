@@ -35,6 +35,7 @@
 <p th:text="${order.recipientName} + ' 様'">山田太郎 様</p>
 <p>〒<span th:text="${order.postalCode}">1000001</span> <span th:text="${order.address}">東京都千代田区千代田1-1</span></p>
 
+<p><a th:href="@{/orders/{id}(id=${order.id})}">ご注文の詳細を見る</a></p>
 <p><a th:href="@{/products}">買い物を続ける</a></p>
 <p><a th:href="@{/}">トップページへ戻る</a></p>
 </body>

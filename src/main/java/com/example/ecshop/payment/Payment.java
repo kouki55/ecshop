@@ -28,8 +28,9 @@ public class Payment {
     @Column(name = "transaction_id", nullable = false, updatable = false, length = 64)
     private String transactionId;
 
+    // 返金で SUCCEEDED → REFUNDED に変わるので、更新できるようにしている
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, updatable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private PaymentStatus status;
 
     @Column(nullable = false, updatable = false)
@@ -37,6 +38,12 @@ public class Payment {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Column(name = "refund_transaction_id", length = 64)
+    private String refundTransactionId;
+
+    @Column(name = "refunded_at")
+    private Instant refundedAt;
 
     protected Payment() {
     }
@@ -49,6 +56,16 @@ public class Payment {
         payment.amount = amount;
         payment.createdAt = now;
         return payment;
+    }
+
+    /** 返金したことを記録する。成功した支払い以外は返金できない。 */
+    public void markRefunded(String refundTransactionId, Instant now) {
+        if (status != PaymentStatus.SUCCEEDED) {
+            throw new IllegalStateException("成功した支払いではないので返金できません: " + status);
+        }
+        this.status = PaymentStatus.REFUNDED;
+        this.refundTransactionId = refundTransactionId;
+        this.refundedAt = now;
     }
 
     public Long getId() {
